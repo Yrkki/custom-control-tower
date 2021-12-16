@@ -1,6 +1,6 @@
 [
     {
         "ParameterKey": "maxAccessKeyAge",
-        "ParameterValue": "31"
+        "ParameterValue": "90"
     }
   ]
