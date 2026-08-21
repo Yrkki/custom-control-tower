@@ -1,0 +1,18 @@
+Rules:
+- AbortIncompleteMultipartUpload:
+    DaysAfterInitiation: 7
+  Expiration:
+    Days: 365
+  Filter:
+    Prefix: AWSLogs/802807423235/
+  ID: one-year retention
+  NoncurrentVersionExpiration:
+    NoncurrentDays: 1
+  Status: Enabled
+- Expiration:
+    ExpiredObjectDeleteMarker: true
+  Filter:
+    Prefix: AWSLogs/802807423235/
+  ID: delete-markers-cleanup
+  Status: Enabled
+TransitionDefaultMinimumObjectSize: all_storage_classes_128K

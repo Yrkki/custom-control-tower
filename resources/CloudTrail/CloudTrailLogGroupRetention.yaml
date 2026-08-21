@@ -1,0 +1,7 @@
+  CloudTrailLogGroupRetention:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: /aws-controltower/CloudTrailLogs
+      RetentionInDays: 365  # adjust to your preference

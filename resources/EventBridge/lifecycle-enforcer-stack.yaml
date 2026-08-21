@@ -1,0 +1,54 @@
+# lifecycle-enforcer-stack.yaml
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CT Lifecycle Enforcer - EventBridge + Lambda
+
+Parameters:
+  LogAccountId:
+    Type: String
+    Default: "640693977485"
+  LambdaRoleArn:
+    Type: String
+    Description: ARN of the ct-lifecycle-enforcer-role
+
+Resources:
+  LifecycleEnforcerFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: ct-lifecycle-enforcer
+      Runtime: python3.12
+      Handler: lifecycle_enforcer.handler
+      Role: !Ref LambdaRoleArn
+      Timeout: 60
+      Code:
+        ZipFile: |
+          # Deploy via zip — placeholder only
+          def handler(event, context):
+              pass
+
+  EventBridgeRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: ct-lifecycle-enforcer-trigger
+      Description: Triggers lifecycle enforcer on CT managed account updates
+      EventPattern:
+        source:
+        - aws.controltower
+        detail-type:
+        - AWS Service Event via CloudTrail
+        detail:
+          eventName:
+          - UpdateManagedAccount
+          - UpdateLandingZone
+          - CreateManagedAccount
+      State: ENABLED
+      Targets:
+      - Id: LifecycleEnforcerLambda
+        Arn: !GetAtt LifecycleEnforcerFunction.Arn
+
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt LifecycleEnforcerFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt EventBridgeRule.Arn

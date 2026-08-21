@@ -1,0 +1,10 @@
+LifecycleConfiguration:
+  Rules:
+    - Id: retain-versions-1yr
+      Status: Enabled
+      ExpirationInDays: 365
+      NoncurrentVersionExpirationInDays: 365
+    - Id: abort-multipart-1yr
+      Status: Enabled
+      AbortIncompleteMultipartUpload:
+        DaysAfterInitiation: 365

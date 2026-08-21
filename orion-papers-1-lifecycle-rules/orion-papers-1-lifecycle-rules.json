@@ -1,0 +1,31 @@
+{
+    "TransitionDefaultMinimumObjectSize": "all_storage_classes_128K",
+    "Rules": [
+        {
+            "Expiration": {
+                "Days": 365
+            },
+            "ID": "one-year retention",
+            "Filter": {
+                "Prefix": "AWSLogs/802807423235/"
+            },
+            "Status": "Enabled",
+            "NoncurrentVersionExpiration": {
+                "NoncurrentDays": 1
+            },
+            "AbortIncompleteMultipartUpload": {
+                "DaysAfterInitiation": 7
+            }
+        },
+        {
+            "Expiration": {
+                "ExpiredObjectDeleteMarker": true
+            },
+            "ID": "delete-markers-cleanup",
+            "Filter": {
+                "Prefix": "AWSLogs/802807423235/"
+            },
+            "Status": "Enabled"
+        }
+    ]
+}

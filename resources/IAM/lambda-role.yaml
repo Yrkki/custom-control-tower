@@ -1,0 +1,35 @@
+# lambda-role.yaml
+AWSTemplateFormatVersion: '2010-09-09'
+Description: IAM role for the CT lifecycle enforcer Lambda
+
+Resources:
+  LifecycleEnforcerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ct-lifecycle-enforcer-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+      - PolicyName: AssumeLogAccountRole
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Resource: !Sub "arn:aws:iam::${LogAccountId}:role/AWSControlTowerExecution"
+
+Parameters:
+  LogAccountId:
+    Type: String
+    Default: "640693977485"
+
+Outputs:
+  RoleArn:
+    Value: !GetAtt LifecycleEnforcerRole.Arn

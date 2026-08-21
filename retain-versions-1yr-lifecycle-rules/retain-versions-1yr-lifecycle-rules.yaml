@@ -1,0 +1,58 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: S3 Lifecycle rules for Control Tower Log Archive buckets
+
+Parameters:
+  LogBucketName:
+    Type: String
+    Description: Main Control Tower logs bucket
+  AccessLogBucketName:
+    Type: String
+    Description: Control Tower S3 access logs bucket
+  NoncurrentVersionExpirationInDays:
+    Type: Number
+    Description: Noncurrent version expiration in days
+
+Resources:
+  LogBucketLifecycle:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Ref LogBucketName
+      LifecycleConfiguration:
+        Rules:
+        - Id: RetentionRule
+          Status: Enabled
+          Filter:
+            Prefix: ""
+          ExpirationInDays: 365
+          NoncurrentVersionExpirationInDays: !Ref NoncurrentVersionExpirationInDays
+        - Id: abort-incomplete-multipart
+          Status: Enabled
+          AbortIncompleteMultipartUpload:
+            DaysAfterInitiation: 7
+        - Id: delete-markers-cleanup
+          Status: Enabled
+          ExpiredObjectDeleteMarker: true
+
+  AccessLogBucketLifecycle:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Ref AccessLogBucketName
+      LifecycleConfiguration:
+        Rules:
+        - Id: RetentionRule
+          Status: Enabled
+          Filter:
+            Prefix: ""
+          ExpirationInDays: 365
+          NoncurrentVersionExpirationInDays: !Ref NoncurrentVersionExpirationInDays
+        - Id: abort-incomplete-multipart
+          Status: Enabled
+          AbortIncompleteMultipartUpload:
+            DaysAfterInitiation: 7
+        - Id: delete-markers-cleanup
+          Status: Enabled
+          ExpiredObjectDeleteMarker: true
