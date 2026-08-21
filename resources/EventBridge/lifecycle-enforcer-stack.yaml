@@ -9,6 +9,18 @@ Parameters:
   LambdaRoleArn:
     Type: String
     Description: ARN of the ct-lifecycle-enforcer-role
+  ExpirationInDays:
+    Type: Number
+    Default: 365
+    Description: Expiration in days
+  NoncurrentVersionExpirationInDays:
+    Type: Number
+    Default: 1
+    Description: Noncurrent version expiration in days
+  AbortIncompleteMultipartUploadDays:
+    Type: Number
+    Default: 7
+    Description: Abort incomplete multipart upload days
 
 Resources:
   LifecycleEnforcerFunction:
@@ -19,9 +31,14 @@ Resources:
       Handler: lifecycle_enforcer.handler
       Role: !Ref LambdaRoleArn
       Timeout: 60
+      Environment:
+        Variables:
+          EXPIRATION_DAYS: !Ref ExpirationInDays
+          NONCURRENT_VERSION_EXPIRATION_DAYS: !Ref NoncurrentVersionExpirationInDays
+          ABORT_INCOMPLETE_MULTIPART_UPLOAD_DAYS: !Ref AbortIncompleteMultipartUploadDays
       Code:
         ZipFile: |
-          # Deploy via zip — placeholder only
+          # Deploy via zip - placeholder only
           def handler(event, context):
               pass
 

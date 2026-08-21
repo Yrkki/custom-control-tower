@@ -1,5 +1,6 @@
 import boto3
 import json
+import os
 import logging
 
 logger = logging.getLogger()
@@ -9,53 +10,36 @@ LOG_ACCOUNT_ID = "640693977485"
 LOG_ACCOUNT_ROLE = f"arn:aws:iam::{LOG_ACCOUNT_ID}:role/AWSControlTowerExecution"
 REGION = "eu-west-1"
 
+EXPIRATION_DAYS         = int(os.environ.get("EXPIRATION_DAYS", 365))
+NONCURRENT_DAYS         = int(os.environ.get("NONCURRENT_VERSION_EXPIRATION_DAYS", 1))
+ABORT_MULTIPART_DAYS    = int(os.environ.get("ABORT_INCOMPLETE_MULTIPART_UPLOAD_DAYS", 7))
+
+def lifecycle_rules(expiration_days, noncurrent_days, abort_multipart_days):
+    return [
+        {
+            "ID": "RetentionRule",
+            "Filter": {"Prefix": ""},
+            "Status": "Enabled",
+            "Expiration": {"Days": expiration_days},
+            "NoncurrentVersionExpiration": {"NoncurrentDays": noncurrent_days}
+        },
+        {
+            "ID": "abort-incomplete-multipart",
+            "Filter": {},
+            "Status": "Enabled",
+            "AbortIncompleteMultipartUpload": {"DaysAfterInitiation": abort_multipart_days}
+        },
+        {
+            "ID": "delete-markers-cleanup",
+            "Filter": {},
+            "Status": "Enabled",
+            "Expiration": {"ExpiredObjectDeleteMarker": True}
+        }
+    ]
+
 BUCKETS = {
-    "aws-controltower-logs-640693977485-eu-west-1": {
-        "Rules": [
-            {
-                "ID": "RetentionRule",
-                "Filter": {"Prefix": ""},
-                "Status": "Enabled",
-                "Expiration": {"Days": 365},
-                "NoncurrentVersionExpiration": {"NoncurrentDays": 1}
-            },
-            {
-                "ID": "abort-incomplete-multipart",
-                "Filter": {},
-                "Status": "Enabled",
-                "AbortIncompleteMultipartUpload": {"DaysAfterInitiation": 7}
-            },
-            {
-                "ID": "delete-markers-cleanup",
-                "Filter": {},
-                "Status": "Enabled",
-                "Expiration": {"ExpiredObjectDeleteMarker": True}
-            }
-        ]
-    },
-    "aws-controltower-s3-access-logs-640693977485-eu-west-1": {
-        "Rules": [
-            {
-                "ID": "RetentionRule",
-                "Filter": {"Prefix": ""},
-                "Status": "Enabled",
-                "Expiration": {"Days": 730},
-                "NoncurrentVersionExpiration": {"NoncurrentDays": 1}
-            },
-            {
-                "ID": "abort-incomplete-multipart",
-                "Filter": {},
-                "Status": "Enabled",
-                "AbortIncompleteMultipartUpload": {"DaysAfterInitiation": 7}
-            },
-            {
-                "ID": "delete-markers-cleanup",
-                "Filter": {},
-                "Status": "Enabled",
-                "Expiration": {"ExpiredObjectDeleteMarker": True}
-            }
-        ]
-    }
+    "aws-controltower-logs-640693977485-eu-west-1":            lifecycle_rules(EXPIRATION_DAYS, NONCURRENT_DAYS, ABORT_MULTIPART_DAYS),
+    "aws-controltower-s3-access-logs-640693977485-eu-west-1":  lifecycle_rules(EXPIRATION_DAYS, NONCURRENT_DAYS, ABORT_MULTIPART_DAYS),
 }
 
 

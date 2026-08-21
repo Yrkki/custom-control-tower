@@ -8,64 +8,36 @@ Parameters:
   AccessLogBucketName:
     Type: String
     Description: Control Tower S3 access logs bucket
-  LogBucketExpirationInDays:
+  ExpirationInDays:
     Type: Number
     Default: 365
-    Description: Log bucket expiration in days
-  AccessLogBucketExpirationInDays:
-    Type: Number
-    Default: 730
-    Description: Access log bucket expiration in days
+    Description: Expiration in days
   NoncurrentVersionExpirationInDays:
     Type: Number
     Default: 1
     Description: Noncurrent version expiration in days
+  AbortIncompleteMultipartUploadDays:
+    Type: Number
+    Default: 7
+    Description: Abort incomplete multipart upload days
 
 Resources:
   LogBucketLifecycle:
-    Type: AWS::S3::Bucket
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
+    Type: AWS::CloudFormation::Stack
     Properties:
-      BucketName: !Ref LogBucketName
-      LifecycleConfiguration:
-        Rules:
-        - Id: RetentionRule
-          Status: Enabled
-          Filter:
-            Prefix: ""
-          ExpirationInDays: !Ref LogBucketExpirationInDays
-          NoncurrentVersionExpiration:
-            NoncurrentDays: !Ref NoncurrentVersionExpirationInDays
-        - Id: abort-incomplete-multipart
-          Status: Enabled
-          AbortIncompleteMultipartUpload:
-            DaysAfterInitiation: 7
-        - Id: delete-markers-cleanup
-          Status: Enabled
-          Expiration:
-            ExpiredObjectDeleteMarker: true
+      TemplateURL: ./s3-lifecycle-rules.yaml
+      Parameters:
+        BucketName: !Ref LogBucketName
+        ExpirationInDays: !Ref ExpirationInDays
+        NoncurrentVersionExpirationInDays: !Ref NoncurrentVersionExpirationInDays
+        AbortIncompleteMultipartUploadDays: !Ref AbortIncompleteMultipartUploadDays
 
   AccessLogBucketLifecycle:
-    Type: AWS::S3::Bucket
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
+    Type: AWS::CloudFormation::Stack
     Properties:
-      BucketName: !Ref AccessLogBucketName
-      LifecycleConfiguration:
-        Rules:
-        - Id: RetentionRule
-          Status: Enabled
-          Filter:
-            Prefix: ""
-          ExpirationInDays: !Ref AccessLogBucketExpirationInDays
-          NoncurrentVersionExpiration:
-            NoncurrentDays: !Ref NoncurrentVersionExpirationInDays
-        - Id: abort-incomplete-multipart
-          Status: Enabled
-          AbortIncompleteMultipartUpload:
-            DaysAfterInitiation: 7
-        - Id: delete-markers-cleanup
-          Status: Enabled
-          Expiration:
-            ExpiredObjectDeleteMarker: true
+      TemplateURL: ./s3-lifecycle-rules.yaml
+      Parameters:
+        BucketName: !Ref AccessLogBucketName
+        ExpirationInDays: !Ref ExpirationInDays
+        NoncurrentVersionExpirationInDays: !Ref NoncurrentVersionExpirationInDays
+        AbortIncompleteMultipartUploadDays: !Ref AbortIncompleteMultipartUploadDays

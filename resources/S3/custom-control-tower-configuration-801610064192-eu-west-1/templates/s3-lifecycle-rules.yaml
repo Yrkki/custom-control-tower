@@ -1,53 +1,48 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: S3 Lifecycle rules for Control Tower Log Archive buckets
+Description: Reusable S3 lifecycle rules
 
 Parameters:
-  LogBucketName:
+  BucketName:
     Type: String
-  AccessLogBucketName:
-    Type: String
+  ExpirationInDays:
+    Type: Number
+    Default: 365
+    Description: Expiration in days
+  NoncurrentVersionExpirationInDays:
+    Type: Number
+    Default: 1
+    Description: Noncurrent version expiration in days
+  AbortIncompleteMultipartUploadDays:
+    Type: Number
+    Default: 7
+    Description: Abort incomplete multipart upload days
 
 Resources:
-  LogBucketLifecycle:
+  BucketLifecycle:
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
     Properties:
-      BucketName: !Ref LogBucketName
+      BucketName: !Ref BucketName
       LifecycleConfiguration:
         Rules:
-          - Id: RetentionRule
-            Status: Enabled
-            Filter:
-              Prefix: ""
-            ExpirationInDays: 365
-            NoncurrentVersionExpirationInDays: 365
-          - Id: abort-incomplete-multipart
-            Status: Enabled
-            AbortIncompleteMultipartUpload:
-              DaysAfterInitiation: 7
-          - Id: delete-markers-cleanup
-            Status: Enabled
-            ExpiredObjectDeleteMarker: true
+        - Id: RetentionRule
+          Status: Enabled
+          Filter:
+            Prefix: ""
+          Expiration:
+            Days: !Ref ExpirationInDays
+          NoncurrentVersionExpiration:
+            NoncurrentDays: !Ref NoncurrentVersionExpirationInDays
 
-  AccessLogBucketLifecycle:
-    Type: AWS::S3::Bucket
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
-    Properties:
-      BucketName: !Ref AccessLogBucketName
-      LifecycleConfiguration:
-        Rules:
-          - Id: RetentionRule
-            Status: Enabled
-            Filter:
-              Prefix: ""
-            ExpirationInDays: 365
-            NoncurrentVersionExpirationInDays: 365
-          - Id: abort-incomplete-multipart
-            Status: Enabled
-            AbortIncompleteMultipartUpload:
-              DaysAfterInitiation: 7
-          - Id: delete-markers-cleanup
-            Status: Enabled
+        - Id: abort-incomplete-multipart
+          Status: Enabled
+          Filter: {}
+          AbortIncompleteMultipartUpload:
+            DaysAfterInitiation: !Ref AbortIncompleteMultipartUploadDays
+
+        - Id: delete-markers-cleanup
+          Status: Enabled
+          Filter: {}
+          Expiration:
             ExpiredObjectDeleteMarker: true
