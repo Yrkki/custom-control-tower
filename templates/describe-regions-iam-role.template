@@ -1,16 +1,16 @@
 ---
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Description: Creates an IAM Role with permissions to describe ec2 regions.
 Parameters:
   dummyParameter:
-    Type: 'String'
-    Description: 'This is a dummy parameter. Placeholder for pipeline validations.'
+    Type: "String"
+    Description: "This is a dummy parameter. Placeholder for pipeline validations."
 Resources:
   TestLambdaRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
@@ -20,9 +20,9 @@ Resources:
       Policies:
         - PolicyName: DescribeRegions
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
                   - ec2:DescribeRegions
-                Resource: '*'
+                Resource: "*"

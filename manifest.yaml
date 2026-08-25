@@ -7,38 +7,57 @@ version: 2021-03-15
 policies:
   - name: test-preventive-guardrails
     description: To prevent from deleting or disabling resources in member accounts
-    policy_file: policies/preventive-guardrails.json
+    resource_file: policies/preventive-guardrails.json
     #Apply to the following OU(s)
-    apply_to_accounts_in_ou:
-      - Security # Formerly Core
-      - Research
+    deployment_targets:
+      organizational_units:
+        - Security # Formerly Core
+        - Research
 
 # Control Tower Custom CloudFormation Resources - Create Additional IAM Role
 resources:
   - name: stackset-1
-    template_file: templates/describe-regions-iam-role.template
-    parameter_file: parameters/describe-regions-iam-role.json
+    resource_file: templates/describe-regions-iam-role.template
+    parameters:
+      - parameter_key: dummyParameter
+        parameter_value: dummyValue
     deploy_method: stack_set
-    deploy_to_ou:
-      - Research
-      - Sandbox # Formerly Custom
+    deployment_targets:
+      organizational_units:
+        - Research
+        - Sandbox # Formerly Custom
     regions:
       - eu-west-1
 
   # Control Tower Config Rule - Additional Detective Guardrails
   - name: stackset-2
-    template_file: templates/access_keys_rotated.template
-    parameter_file: parameters/access_keys_rotated.json
+    resource_file: templates/access_keys_rotated.template
+    parameters:
+      - parameter_key: maxAccessKeyAge
+        parameter_value: 180
     deploy_method: stack_set
-    deploy_to_ou:
-      - Research
+    deployment_targets:
+      organizational_units:
+        - Research
     regions:
       - eu-west-1
 
   # Control Tower Automation - Lifecycle Configuration Re-enforcer
   - name: s3-lifecycle-configuration
-    template_file: templates/s3-lifecycle-configuration.template
-    parameter_file: parameters/s3-lifecycle-configuration.json
+    resource_file: templates/s3-lifecycle-configuration.template
+    parameters:
+      - parameter_key: LogBucketName
+        parameter_value: aws-controltower-logs-640693977485-eu-west-1
+      - parameter_key: AccessLogBucketName
+        parameter_value: aws-controltower-s3-access-logs-640693977485-eu-west-1
+      - parameter_key: ExpirationInDays
+        parameter_value: 365
+      - parameter_key: NoncurrentVersionExpirationInDays
+        parameter_value: 1
+      - parameter_key: AbortIncompleteMultipartUploadDays
+        parameter_value: 7
+      - parameter_key: RulesTemplateURL
+        parameter_value: https://[custom:template_bucket]s3-lifecycle-rules.template
     deploy_method: stack_set
     deployment_targets:
       accounts:
