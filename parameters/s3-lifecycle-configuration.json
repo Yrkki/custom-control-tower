@@ -18,5 +18,9 @@
     {
         "ParameterKey": "AbortIncompleteMultipartUploadDays",
         "ParameterValue": "7"
+    },
+    {
+        "ParameterKey": "RulesTemplateURL",
+        "ParameterValue": "https://[custom:template_bucket]s3-lifecycle-rules.template"
     }
 ]

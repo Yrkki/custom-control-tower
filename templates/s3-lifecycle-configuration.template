@@ -23,45 +23,31 @@ Parameters:
     Default: 7
     Description: Abort incomplete multipart upload days
 
-# NATIVE REUSABLE ANCHOR BLOCK: allows !Ref and is completely ignored by CloudFormation validation loops
-Metadata:
-  CommonComponents:
-    LifecycleConfiguration: &LifecycleConfiguration
-      Rules:
-        - Id: RetentionRule
-          Status: Enabled
-          Filter:
-            Prefix: ""
-          Expiration:
-            Days: !Ref ExpirationInDays
-          NoncurrentVersionExpiration:
-            NoncurrentDays: !Ref NoncurrentVersionExpirationInDays
-
-        - Id: abort-incomplete-multipart
-          Status: Enabled
-          Filter: {}
-          AbortIncompleteMultipartUpload:
-            DaysAfterInitiation: !Ref AbortIncompleteMultipartUploadDays
-
-        - Id: delete-markers-cleanup
-          Status: Enabled
-          Filter: {}
-          Expiration:
-            ExpiredObjectDeleteMarker: true
+  # NATIVE REUSABLE ANCHOR BLOCK: allows !Ref and is completely ignored by CloudFormation validation loops
+  # DYNAMIC INTEGRATION HOOK
+  # This receives the [custom:template_bucket] token injected dynamically by CfCT
+  RulesTemplateURL:
+    Type: String
+    Default: "https://[custom:template_bucket]s3-lifecycle-rules.template"
+    Description: The rules subtemplate location in the internal S3 staging bucket where CfCT hosts our template files
 
 Resources:
   LogBucketLifecycle:
-    Type: AWS::S3::Bucket
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
+    Type: AWS::CloudFormation::Stack
     Properties:
-      BucketName: !Ref LogBucketName
-      LifecycleConfiguration: *LifecycleConfiguration
+      TemplateURL: !Ref RulesTemplateURL
+      Parameters:
+        BucketName: !Ref LogBucketName
+        ExpirationInDays: !Ref ExpirationInDays
+        NoncurrentVersionExpirationInDays: !Ref NoncurrentVersionExpirationInDays
+        AbortIncompleteMultipartUploadDays: !Ref AbortIncompleteMultipartUploadDays
 
   AccessLogBucketLifecycle:
-    Type: AWS::S3::Bucket
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
+    Type: AWS::CloudFormation::Stack
     Properties:
-      BucketName: !Ref AccessLogBucketName
-      LifecycleConfiguration: *LifecycleConfiguration
+      TemplateURL: !Ref RulesTemplateURL
+      Parameters:
+        BucketName: !Ref AccessLogBucketName
+        ExpirationInDays: !Ref ExpirationInDays
+        NoncurrentVersionExpirationInDays: !Ref NoncurrentVersionExpirationInDays
+        AbortIncompleteMultipartUploadDays: !Ref AbortIncompleteMultipart
