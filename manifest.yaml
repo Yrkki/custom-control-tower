@@ -55,7 +55,7 @@ resources:
       - parameter_key: AbortIncompleteMultipartUploadDays
         parameter_value: 7
       - parameter_key: RulesTemplateURL
-        parameter_value: https://[custom:template_bucket]/s3-lifecycle-rules.template
+        parameter_value: https://[custom:template_bucket]/templates/s3-lifecycle-rules.template
     deploy_method: stack_set
     deployment_targets:
       accounts:
