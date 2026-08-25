@@ -27,9 +27,9 @@ resources:
     regions:
       - eu-west-1
 
-  - name: access_keys_rotated
+  - name: access-keys-rotated
     description: Control Tower Config Rule - Additional Detective Guardrails
-    resource_file: templates/access_keys_rotated.template
+    resource_file: templates/access-keys-rotated.template
     parameters:
       - parameter_key: maxAccessKeyAge
         parameter_value: 180
