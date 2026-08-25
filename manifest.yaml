@@ -4,22 +4,22 @@ region: eu-west-1 # Control Tower Home Region
 version: 2021-03-15
 
 # Control Tower Custom Service Control Policies - Additional Preventive Guardrails
-organization_policies:
+policies:
   - name: test-preventive-guardrails
     description: To prevent from deleting or disabling resources in member accounts
     policy_file: policies/preventive-guardrails.json
     #Apply to the following OU(s)
-    apply_to_accounts_in_ou: # :type: list
+    apply_to_accounts_in_ou:
       - Security # Formerly Core
       - Research
 
 # Control Tower Custom CloudFormation Resources - Create Additional IAM Role
-cloudformation_resources:
+resources:
   - name: stackset-1
     template_file: templates/describe-regions-iam-role.template
     parameter_file: parameters/describe-regions-iam-role.json
     deploy_method: stack_set
-    deploy_to_ou: # :type: list
+    deploy_to_ou:
       - Research
       - Sandbox # Formerly Custom
     regions:
@@ -30,7 +30,7 @@ cloudformation_resources:
     template_file: templates/access_keys_rotated.template
     parameter_file: parameters/access_keys_rotated.json
     deploy_method: stack_set
-    deploy_to_ou: # :type: list
+    deploy_to_ou:
       - Research
     regions:
       - eu-west-1
