@@ -3,20 +3,18 @@
 region: eu-west-1 # Control Tower Home Region
 version: 2021-03-15
 
-# Control Tower Custom Service Control Policies - Additional Preventive Guardrails
-policies:
+resources:
   - name: test-preventive-guardrails
-    description: To prevent from deleting or disabling resources in member accounts
+    description: Control Tower Custom Service Control Policies - Additional Preventive Guardrails. To prevent from deleting or disabling resources in member accounts
     resource_file: policies/preventive-guardrails.json
-    #Apply to the following OU(s)
+    deploy_method: scp
     deployment_targets:
       organizational_units:
         - Security # Formerly Core
         - Research
 
-# Control Tower Custom CloudFormation Resources - Create Additional IAM Role
-resources:
-  - name: stackset-1
+  - name: describe-regions-iam-role
+    description: Control Tower Custom CloudFormation Resources - Create Additional IAM Role
     resource_file: templates/describe-regions-iam-role.template
     parameters:
       - parameter_key: dummyParameter
@@ -29,8 +27,8 @@ resources:
     regions:
       - eu-west-1
 
-  # Control Tower Config Rule - Additional Detective Guardrails
-  - name: stackset-2
+  - name: access_keys_rotated
+    description: Control Tower Config Rule - Additional Detective Guardrails
     resource_file: templates/access_keys_rotated.template
     parameters:
       - parameter_key: maxAccessKeyAge
@@ -42,8 +40,8 @@ resources:
     regions:
       - eu-west-1
 
-  # Control Tower Automation - Lifecycle Configuration Re-enforcer
   - name: s3-lifecycle-configuration
+    description: Control Tower Automation - Lifecycle Configuration Re-enforcer
     resource_file: templates/s3-lifecycle-configuration.template
     parameters:
       - parameter_key: LogBucketName
