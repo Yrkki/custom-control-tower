@@ -23,14 +23,25 @@ cloudformation_resources:
       - Research
       - Sandbox # Formerly Custom
     regions:
-      - eu-west-1 
+      - eu-west-1
 
-# Control Tower Config Rule - Additional Detective Guardrails
+  # Control Tower Config Rule - Additional Detective Guardrails
   - name: stackset-2
     template_file: templates/access_keys_rotated.template
     parameter_file: parameters/access_keys_rotated.json
     deploy_method: stack_set
     deploy_to_ou: # :type: list
       - Research
-    regions: 
+    regions:
+      - eu-west-1
+
+  # Control Tower Automation - Lifecycle Configuration Re-enforcer
+  - name: s3-lifecycle-configuration
+    template_file: templates/s3-lifecycle-configuration.template
+    parameter_file: parameters/s3-lifecycle-configuration.json
+    deploy_method: stack_set
+    deployment_targets:
+      accounts:
+        - Log Archive # Directing target execution directly inside the Log Archive sub-account
+    regions:
       - eu-west-1

@@ -1,12 +1,14 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Description: S3 Lifecycle rules for Control Tower Log Archive buckets
 
 Parameters:
   LogBucketName:
     Type: String
+    Default: "aws-controltower-logs-640693977485-eu-west-1"
     Description: Main Control Tower logs bucket
   AccessLogBucketName:
     Type: String
+    Default: "aws-controltower-s3-access-logs-640693977485-eu-west-1"
     Description: Control Tower S3 access logs bucket
   ExpirationInDays:
     Type: Number
@@ -25,7 +27,7 @@ Resources:
   LogBucketLifecycle:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: ./s3-lifecycle-rules.yaml
+      TemplateURL: ./s3-lifecycle-rules.template
       Parameters:
         BucketName: !Ref LogBucketName
         ExpirationInDays: !Ref ExpirationInDays
@@ -35,7 +37,7 @@ Resources:
   AccessLogBucketLifecycle:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: ./s3-lifecycle-rules.yaml
+      TemplateURL: ./s3-lifecycle-rules.template
       Parameters:
         BucketName: !Ref AccessLogBucketName
         ExpirationInDays: !Ref ExpirationInDays

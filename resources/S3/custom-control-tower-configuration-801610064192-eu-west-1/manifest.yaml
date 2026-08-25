@@ -1,6 +1,6 @@
 resources:
   - name: s3-lifecycle-log-buckets
-    resource_file: templates/s3-lifecycle-rules.yaml
+    resource_file: templates/s3-lifecycle-rules.template
     parameters:
       - parameter_key: LogBucketName
         parameter_value: aws-controltower-logs-640693977485-eu-west-1
@@ -9,6 +9,6 @@ resources:
     deploy_method: stack_set
     deployment_targets:
       accounts:
-        - Log Archive  # or the account ID of your log archive account
+        - Log Archive # or the account ID of your log archive account
     regions:
       - eu-west-1

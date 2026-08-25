@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: S3 Lifecycle rules for Control Tower Log Archive buckets - Single File Solution
+
+Parameters:
+  LogBucketName:
+    Type: String
+    Default: "aws-controltower-logs-640693977485-eu-west-1"
+    Description: Main Control Tower logs bucket
+  AccessLogBucketName:
+    Type: String
+    Default: "aws-controltower-s3-access-logs-640693977485-eu-west-1"
+    Description: Control Tower S3 access logs bucket
+  ExpirationInDays:
+    Type: Number
+    Default: 365
+    Description: Expiration in days
+  NoncurrentVersionExpirationInDays:
+    Type: Number
+    Default: 1
+    Description: Noncurrent version expiration in days
+  AbortIncompleteMultipartUploadDays:
+    Type: Number
+    Default: 7
+    Description: Abort incomplete multipart upload days
+
+# NATIVE REUSABLE ANCHOR BLOCK: allows !Ref and is completely ignored by CloudFormation validation loops
+Metadata:
+  CommonComponents:
+    LifecycleConfiguration: &LifecycleConfiguration
+      Rules:
+        - Id: RetentionRule
+          Status: Enabled
+          Filter:
+            Prefix: ""
+          Expiration:
+            Days: !Ref ExpirationInDays
+          NoncurrentVersionExpiration:
+            NoncurrentDays: !Ref NoncurrentVersionExpirationInDays
+
+        - Id: abort-incomplete-multipart
+          Status: Enabled
+          Filter: {}
+          AbortIncompleteMultipartUpload:
+            DaysAfterInitiation: !Ref AbortIncompleteMultipartUploadDays
+
+        - Id: delete-markers-cleanup
+          Status: Enabled
+          Filter: {}
+          Expiration:
+            ExpiredObjectDeleteMarker: true
+
+Resources:
+  LogBucketLifecycle:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Ref LogBucketName
+      LifecycleConfiguration: *LifecycleConfiguration
+
+  AccessLogBucketLifecycle:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Ref AccessLogBucketName
+      LifecycleConfiguration: *LifecycleConfiguration

@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Reusable S3 lifecycle rules
+
+Parameters:
+  BucketName:
+    Type: String
+  ExpirationInDays:
+    Type: Number
+    Default: 365
+    Description: Expiration in days
+  NoncurrentVersionExpirationInDays:
+    Type: Number
+    Default: 1
+    Description: Noncurrent version expiration in days
+  AbortIncompleteMultipartUploadDays:
+    Type: Number
+    Default: 7
+    Description: Abort incomplete multipart upload days
+
+Resources:
+  BucketLifecycle:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Ref BucketName
+      LifecycleConfiguration:
+        Rules:
+          - Id: RetentionRule
+            Status: Enabled
+            Filter:
+              Prefix: ""
+            Expiration:
+              Days: !Ref ExpirationInDays
+            NoncurrentVersionExpiration:
+              NoncurrentDays: !Ref NoncurrentVersionExpirationInDays
+
+          - Id: abort-incomplete-multipart
+            Status: Enabled
+            Filter: {}
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: !Ref AbortIncompleteMultipartUploadDays
+
+          - Id: delete-markers-cleanup
+            Status: Enabled
+            Filter: {}
+            Expiration:
+              ExpiredObjectDeleteMarker: true

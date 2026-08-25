@@ -1,0 +1,22 @@
+[
+    {
+        "ParameterKey": "LogBucketName",
+        "ParameterValue": "aws-controltower-logs-640693977485-eu-west-1"
+    },
+    {
+        "ParameterKey": "AccessLogBucketName",
+        "ParameterValue": "aws-controltower-s3-access-logs-640693977485-eu-west-1"
+    },
+    {
+        "ParameterKey": "ExpirationInDays",
+        "ParameterValue": "365"
+    },
+    {
+        "ParameterKey": "NoncurrentVersionExpirationInDays",
+        "ParameterValue": "1"
+    },
+    {
+        "ParameterKey": "AbortIncompleteMultipartUploadDays",
+        "ParameterValue": "7"
+    }
+]
