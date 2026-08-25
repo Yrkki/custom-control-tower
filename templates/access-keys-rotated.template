@@ -10,7 +10,7 @@ Resources:
   CustomConfigRule:
     Type: AWS::Config::ConfigRule
     Properties:
-      ConfigRuleName: ACCESS_KEYS_ROTATED
+      ConfigRuleName: !Sub "Custom-ACCESS_KEYS_ROTATED-${AWS::AccountId}"
       Description: Custom Config Rule - Checks whether the active access keys are rotated within the number of days specified in maxAccessKeyAge
       InputParameters:
         maxAccessKeyAge: !Ref maxAccessKeyAge

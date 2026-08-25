@@ -28,7 +28,7 @@ Parameters:
   # This receives the [custom:template_bucket] token injected dynamically by CfCT
   RulesTemplateURL:
     Type: String
-    Default: "https://[custom:template_bucket]s3-lifecycle-rules.template"
+    Default: "https://[custom:template_bucket]/s3-lifecycle-rules.template"
     Description: The rules subtemplate location in the internal S3 staging bucket where CfCT hosts our template files
 
 Resources:

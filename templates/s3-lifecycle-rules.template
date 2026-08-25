@@ -18,7 +18,7 @@ Parameters:
     Description: Abort incomplete multipart upload days
 
 Resources:
-  BucketLifecycle:
+  Bucket:
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
