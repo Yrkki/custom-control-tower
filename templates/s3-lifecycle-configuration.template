@@ -37,17 +37,13 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
-        - PolicyName: S3LifecycleConfigPolicy
+        - PolicyName: AssumeCTExecutionRolePolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
-                Action:
-                  - s3:PutLifecycleConfiguration
-                  - s3:GetLifecycleConfiguration
-                Resource:
-                  - !Sub "arn:aws:s3:::${LogBucketName}"
-                  - !Sub "arn:aws:s3:::${AccessLogBucketName}"
+                Action: sts:AssumeRole
+                Resource: !Sub "arn:aws:iam::${AWS::AccountId}:role/AWSControlTowerExecution"
 
   ApplyLifecycleFunction:
     Type: AWS::Lambda::Function
@@ -82,12 +78,30 @@ Resources:
 
           def handler(event, context):
               logger.info(f"Received event: {json.dumps(event)}")
-              s3 = boto3.client('s3')
               props = event['ResourceProperties']
               buckets = [props['LogBucketName'], props['AccessLogBucketName']]
               
               if event['RequestType'] in ['Create', 'Update']:
                   try:
+                      # Assume the SCP-whitelisted AWSControlTowerExecution role
+                      sts_client = boto3.client('sts')
+                      account_id = context.invoked_function_arn.split(':')[4]
+                      role_arn = f"arn:aws:iam::{account_id}:role/AWSControlTowerExecution"
+                      
+                      logger.info(f"Assuming role: {role_arn}")
+                      assumed_role = sts_client.assume_role(
+                          RoleArn=role_arn,
+                          RoleSessionName="S3LifecycleEnforcerSession"
+                      )
+                      
+                      creds = assumed_role['Credentials']
+                      s3 = boto3.client(
+                          's3',
+                          aws_access_key_id=creds['AccessKeyId'],
+                          aws_secret_access_key=creds['SecretAccessKey'],
+                          aws_session_token=creds['SessionToken']
+                      )
+
                       config = {
                           'Rules': [
                               {
@@ -105,7 +119,7 @@ Resources:
                               },
                               {
                                   'ID': 'delete-markers-cleanup',
-                                  'Filter': {'Prefix': ''},  # Explicit Prefix fix for delete markers
+                                  'Filter': {'Prefix': ''},
                                   'Status': 'Enabled',
                                   'Expiration': {'ExpiredObjectDeleteMarker': True}
                               }
