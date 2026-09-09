@@ -40,6 +40,16 @@ resources:
     regions:
       - eu-west-1
 
+  - name: iam-ct-execution-trust-extension
+    description: Enforces trust extension for AWSControlTowerExecution across Log Archive
+    resource_file: templates/iam-ct-execution-trust-extension.template
+    deploy_method: stack_set
+    deployment_targets:
+      accounts:
+        - Log Archive
+    regions:
+      - eu-west-1
+
   - name: s3-lifecycle-configuration
     description: Control Tower Automation - Lifecycle Configuration Re-enforcer
     resource_file: templates/s3-lifecycle-configuration.template

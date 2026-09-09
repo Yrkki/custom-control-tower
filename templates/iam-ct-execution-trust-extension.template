@@ -1,0 +1,16 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Grants local IAM roles permission to assume AWSControlTowerExecution
+
+Resources:
+  CTExecutionTrustExtensionPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: AllowLocalAssumeCTExecution
+      Roles:
+        - AWSControlTowerExecution
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Resource: !Sub "arn:aws:iam::${AWS::AccountId}:role/AWSControlTowerExecution"
