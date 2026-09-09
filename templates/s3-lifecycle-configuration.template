@@ -1,11 +1,15 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: S3 Lifecycle rules for Control Tower Log Archive buckets - Single File Solution
+Description: S3 Lifecycle rules for Control Tower Log Archive buckets via Custom Resource
 
 Parameters:
-  TargetBucketNames:
-    Type: CommaDelimitedList
-    Default: "aws-controltower-logs-640693977485-eu-west-1,aws-controltower-s3-access-logs-640693977485-eu-west-1"
-    Description: Comma-separated list of target S3 bucket names
+  LogBucketName:
+    Type: String
+    Default: "aws-controltower-logs-640693977485-eu-west-1"
+    Description: Main Control Tower logs bucket
+  AccessLogBucketName:
+    Type: String
+    Default: "aws-controltower-s3-access-logs-640693977485-eu-west-1"
+    Description: Control Tower S3 access logs bucket
   ExpirationInDays:
     Type: Number
     Default: 365
@@ -20,31 +24,102 @@ Parameters:
     Description: Abort incomplete multipart upload days
 
 Resources:
-  "Fn::ForEach::ApplyBucketLifecycle":
-    - BucketName
-    - !Ref TargetBucketNames
-    - "$BucketLifecycle&{BucketName}":
-        Type: AWS::S3::Bucket
-        DeletionPolicy: Retain
-        UpdateReplacePolicy: Retain
-        Properties:
-          BucketName: !Ref BucketName
-          LifecycleConfiguration:
-            Rules:
-              - Id: retention-period
-                Status: Enabled
-                Filter: {}
-                Expiration:
-                  Days: !Ref ExpirationInDays
-                NoncurrentVersionExpiration:
-                  NoncurrentDays: !Ref NoncurrentVersionExpirationInDays
-              - Id: abort-incomplete-multipart
-                Status: Enabled
-                Filter: {}
-                AbortIncompleteMultipartUpload:
-                  DaysAfterInitiation: !Ref AbortIncompleteMultipartUploadDays
-              - Id: delete-markers-cleanup
-                Status: Enabled
-                Filter: {}
-                Expiration:
-                  ExpiredObjectDeleteMarker: true
+  LifecycleLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: S3LifecycleConfigPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutLifecycleConfiguration
+                  - s3:GetLifecycleConfiguration
+                Resource:
+                  - !Sub "arn:aws:s3:::${LogBucketName}"
+                  - !Sub "arn:aws:s3:::${AccessLogBucketName}"
+
+  ApplyLifecycleFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Role: !GetAtt LifecycleLambdaExecutionRole.Arn
+      Runtime: python3.12
+      Timeout: 60
+      Code:
+        ZipFile: |
+          import urllib3
+          import json
+          import boto3
+
+          http = urllib3.PoolManager()
+
+          def send_response(event, context, response_status, response_data, physical_id=None):
+              response_body = json.dumps({
+                  'Status': response_status,
+                  'Reason': f'See CloudWatch Logs: {context.log_stream_name}',
+                  'PhysicalResourceId': physical_id or context.log_stream_name,
+                  'StackId': event['StackId'],
+                  'RequestId': event['RequestId'],
+                  'LogicalResourceId': event['LogicalResourceId'],
+                  'Data': response_data
+              })
+              http.request('PUT', event['ResponseURL'], body=response_body, headers={'Content-Type': ''})
+
+          def handler(event, context):
+              s3 = boto3.client('s3')
+              props = event['ResourceProperties']
+              buckets = [props['LogBucketName'], props['AccessLogBucketName']]
+              
+              if event['RequestType'] in ['Create', 'Update']:
+                  try:
+                      config = {
+                          'Rules': [
+                              {
+                                  'ID': 'RetentionRule',
+                                  'Filter': {'Prefix': ''},
+                                  'Status': 'Enabled',
+                                  'Expiration': {'Days': int(props['ExpirationInDays'])},
+                                  'NoncurrentVersionExpiration': {'NoncurrentDays': int(props['NoncurrentVersionExpirationInDays'])}
+                              },
+                              {
+                                  'ID': 'abort-incomplete-multipart',
+                                  'Filter': {},
+                                  'Status': 'Enabled',
+                                  'AbortIncompleteMultipartUpload': {'DaysAfterInitiation': int(props['AbortIncompleteMultipartUploadDays'])}
+                              },
+                              {
+                                  'ID': 'delete-markers-cleanup',
+                                  'Filter': {},
+                                  'Status': 'Enabled',
+                                  'Expiration': {'ExpiredObjectDeleteMarker': True}
+                              }
+                          ]
+                      }
+                      for b in buckets:
+                          s3.put_bucket_lifecycle_configuration(Bucket=b, LifecycleConfiguration=config)
+                      send_response(event, context, 'SUCCESS', {}, physical_id="control-tower-s3-lifecycle-enforcer")
+                  except Exception as e:
+                      send_response(event, context, 'FAILED', {'Error': str(e)}, physical_id="control-tower-s3-lifecycle-enforcer")
+              elif event['RequestType'] == 'Delete':
+                  send_response(event, context, 'SUCCESS', {}, physical_id=event.get('PhysicalResourceId'))
+
+  ApplyBucketLifecycle:
+    Type: Custom::S3LifecycleConfiguration
+    Properties:
+      ServiceToken: !GetAtt ApplyLifecycleFunction.Arn
+      LogBucketName: !Ref LogBucketName
+      AccessLogBucketName: !Ref AccessLogBucketName
+      ExpirationInDays: !Ref ExpirationInDays
+      NoncurrentVersionExpirationInDays: !Ref NoncurrentVersionExpirationInDays
+      AbortIncompleteMultipartUploadDays: !Ref AbortIncompleteMultipartUploadDays
