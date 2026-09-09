@@ -61,22 +61,27 @@ Resources:
           import urllib3
           import json
           import boto3
+          import logging
 
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
           http = urllib3.PoolManager()
 
-          def send_response(event, context, response_status, response_data, physical_id=None):
+          def send_response(event, context, response_status, response_data, physical_id=None, reason=None):
               response_body = json.dumps({
                   'Status': response_status,
-                  'Reason': f'See CloudWatch Logs: {context.log_stream_name}',
+                  'Reason': reason or f'See CloudWatch Logs: {context.log_stream_name}',
                   'PhysicalResourceId': physical_id or context.log_stream_name,
                   'StackId': event['StackId'],
                   'RequestId': event['RequestId'],
                   'LogicalResourceId': event['LogicalResourceId'],
                   'Data': response_data
               })
+              logger.info(f"Sending CloudFormation Response: {response_body}")
               http.request('PUT', event['ResponseURL'], body=response_body, headers={'Content-Type': ''})
 
           def handler(event, context):
+              logger.info(f"Received event: {json.dumps(event)}")
               s3 = boto3.client('s3')
               props = event['ResourceProperties']
               buckets = [props['LogBucketName'], props['AccessLogBucketName']]
@@ -94,23 +99,26 @@ Resources:
                               },
                               {
                                   'ID': 'abort-incomplete-multipart',
-                                  'Filter': {},
+                                  'Filter': {'Prefix': ''},
                                   'Status': 'Enabled',
                                   'AbortIncompleteMultipartUpload': {'DaysAfterInitiation': int(props['AbortIncompleteMultipartUploadDays'])}
                               },
                               {
                                   'ID': 'delete-markers-cleanup',
-                                  'Filter': {},
+                                  'Filter': {'Prefix': ''},  # Explicit Prefix fix for delete markers
                                   'Status': 'Enabled',
                                   'Expiration': {'ExpiredObjectDeleteMarker': True}
                               }
                           ]
                       }
                       for b in buckets:
+                          logger.info(f"Applying lifecycle rule to bucket: {b}")
                           s3.put_bucket_lifecycle_configuration(Bucket=b, LifecycleConfiguration=config)
+                      
                       send_response(event, context, 'SUCCESS', {}, physical_id="control-tower-s3-lifecycle-enforcer")
                   except Exception as e:
-                      send_response(event, context, 'FAILED', {'Error': str(e)}, physical_id="control-tower-s3-lifecycle-enforcer")
+                      logger.error(f"Error applying lifecycle config: {str(e)}", exc_info=True)
+                      send_response(event, context, 'FAILED', {}, physical_id="control-tower-s3-lifecycle-enforcer", reason=str(e))
               elif event['RequestType'] == 'Delete':
                   send_response(event, context, 'SUCCESS', {}, physical_id=event.get('PhysicalResourceId'))
 
